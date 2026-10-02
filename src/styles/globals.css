@@ -1,0 +1,106 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root,
+  .dark {
+    --background: #0b0e14;
+    --foreground: #f1f5f9;
+    
+    /* Dark scientific surfaces */
+    --surface-50: #0f131a;
+    --surface-100: #131822;
+    --surface-200: #182030;
+    --surface-300: #1e283c;
+    --surface-400: #25324b;
+    --surface-500: #2f3e5c;
+    --surface-600: #3b4d70;
+    
+    /* Precision metallic borders */
+    --border-subtle: #1c2433;
+    --border-default: #253247;
+    --border-strong: #384866;
+    
+    /* Telemetry indicators */
+    --status-online: #10b981;
+    --status-warming: #f59e0b;
+    --status-paused: #64748b;
+    --status-critical: #f43f5e;
+    --status-delivered: #00d2ff;
+    --status-queued: #38bdf8;
+  }
+
+  .light {
+    --background: #f8fafc;
+    --foreground: #0f172a;
+    
+    /* Light clean surfaces */
+    --surface-50: #ffffff;
+    --surface-100: #f1f5f9;
+    --surface-200: #e2e8f0;
+    --surface-300: #cbd5e1;
+    --surface-400: #94a3b8;
+    --surface-500: #64748b;
+    --surface-600: #475569;
+    
+    /* Light borders */
+    --border-subtle: #e2e8f0;
+    --border-default: #cbd5e1;
+    --border-strong: #94a3b8;
+    
+    /* Telemetry indicators */
+    --status-online: #059669;
+    --status-warming: #d97706;
+    --status-paused: #64748b;
+    --status-critical: #e11d48;
+    --status-delivered: #0284c7;
+    --status-queued: #0284c7;
+  }
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  -webkit-font-smoothing: antialiased;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* Light mode text adaptors */
+html.light .text-slate-400 {
+  color: #64748b;
+}
+html.light .text-slate-300 {
+  color: #475569;
+}
+html.light .text-slate-200 {
+  color: #334155;
+}
+
+/* Precision scrollbar for scientific dashboard */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--background);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--surface-300);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--surface-500);
+}
+
+/* Subtle telemetry pulse */
+@keyframes henu-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.animate-henu-pulse {
+  animation: henu-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+

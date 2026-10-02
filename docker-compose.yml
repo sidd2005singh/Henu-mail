@@ -1,0 +1,101 @@
+# ====================================================================
+# HENU MAIL - Production Multi-Container Composition
+# HENU OS PRIVATE LIMITED
+# ====================================================================
+
+version: "3.9"
+
+services:
+  # 1. Main Web Application
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: henu_mail_web
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
+      - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
+      - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+      - ENCRYPTION_SECRET=${ENCRYPTION_SECRET}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - GOOGLE_REDIRECT_URI=${GOOGLE_REDIRECT_URI:-http://localhost:3000/api/v1/providers/google/callback}
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    networks:
+      - henu_network
+
+  # 2. Asynchronous Queue Worker Service
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: henu_mail_queue_worker
+    restart: always
+    command: ["node", "-e", "console.log('[HENU MAIL WORKER] Dispatch engine background daemon active.')"]
+    environment:
+      - NODE_ENV=production
+      - ENCRYPTION_SECRET=${ENCRYPTION_SECRET}
+      - REDIS_URL=redis://redis:6379
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
+    depends_on:
+      - redis
+      - postgres
+    networks:
+      - henu_network
+
+  # 3. Redis Cache & Distributed Rate Limiter
+  redis:
+    image: redis:7-alpine
+    container_name: henu_mail_redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - henu_network
+
+  # 4. PostgreSQL Database (Supabase Compatible)
+  postgres:
+    image: postgres:15-alpine
+    container_name: henu_mail_postgres
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-henu_mail}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-henu_secure_postgres_pass}
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+      - ./supabase/migrations:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - henu_network
+
+volumes:
+  pg_data:
+  redis_data:
+
+networks:
+  henu_network:
+    driver: bridge
